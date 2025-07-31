@@ -73,5 +73,5 @@ This project is licensed under the **BSD 3-Clause License**.
 
 ---
 
-🚑 **Helping people find medical assistance faster!**
+ **Helping people find accurate results!**
 
