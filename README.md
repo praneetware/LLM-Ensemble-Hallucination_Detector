@@ -4,7 +4,7 @@
 LLM-Ensemble-Hallucination_Detector is a Python-based application designed to evaluate and mitigate hallucinations in Large Language Models (LLMs). It implements an ensemble approach by leveraging multiple LLM APIs to generate and assess responses, using sentence-level semantic similarity and reference-based judgment techniques. This tool aids in identifying inconsistencies or hallucinated outputs and supports comparative model evaluation.
 
 ## 📌 Features
-🔗 **LLM Ensemble API Integration:** Queries multiple large language models (LLMs) like OpenRouter, Groq, and others via API to get responses.
+🔗 **LLM Ensemble API Integration:** Queries multiple large language models (LLMs) like "llama3-70b-8192", "qwen-qwq-32b", "gemma2-9b-it", and "deepseek-r1-distill-llama-70b", from OpenRouter, Groq, and others via API to get responses.
 
 🧠 **Semantic Summarization:** Accepts free-text input and generates a single-word distilled response from each model.
 
