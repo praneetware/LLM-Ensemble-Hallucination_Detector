@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LLM HALLUCINATION DETECTION PLATFORM</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col items-center justify-center p-4">
+    <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-4xl">
+        <h1 class="text-2xl font-bold text-center mb-4">LLM HALLUCINATION DETECTION PLATFORM</h1>
+        
+        <!-- Input Form -->
+        <div class="mb-4">
+            <label for="prompt" class="block text-sm font-medium text-gray-700">Enter your prompt:</label>
+            <textarea id="prompt" rows="4" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"></textarea>
+        </div>
+        <button id="submitBtn" class="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">Submit</button>
+        
+        <!-- Test Accuracy -->
+        <button id="testAccuracyBtn" class="w-full mt-2 bg-yellow-600 text-white py-2 px-4 rounded-md hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-yellow-500">Test Accuracy on Dataset</button>
+
+        <!-- Final Output Section -->
+        <div id="finalOutput" class="hidden mt-4 p-4 bg-green-100 rounded-md text-gray-800 font-semibold text-center"></div>
+        
+        <!-- Loading Spinner -->
+        <div id="loading" class="hidden mt-4 text-center">
+            <svg class="animate-spin h-8 w-8 text-indigo-600 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <p class="text-gray-600 mt-2">Processing...</p>
+        </div>
+        
+        <!-- Results Section -->
+        <div id="results" class="mt-6 hidden">
+            <h2 class="text-lg font-semibold mb-2">Results</h2>
+            
+            <!-- Model Outputs and Cluster Assignments Table -->
+            <div class="mt-4">
+                <h3 class="text-md font-semibold mb-2">Model Outputs and Cluster Assignments</h3>
+                <table id="resultsTable" class="w-full border-collapse border border-gray-300">
+                    <thead>
+                        <tr class="bg-gray-100">
+                            <th class="border border-gray-300 p-2">Model</th>
+                            <th class="border border-gray-300 p-2">Output</th>
+                            <th class="border border-gray-300 p-2">Cluster</th>
+                            <th class="border border-gray-300 p-2">Avg Cluster Similarity</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resultsTableBody"></tbody>
+                </table>
+            </div>
+            
+
+            <!-- Descriptive and One-Word Answer -->
+            <div class="mt-6">
+                <h3 class="text-md font-semibold mb-2">Final Answers</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="p-4 bg-white rounded shadow border">
+                        <p class="font-medium text-gray-700">Descriptive Answer:</p>
+                        <p id="descriptiveAnswer" class="text-gray-900 mt-1"></p>
+                    </div>
+                    <div class="p-4 bg-white rounded shadow border">
+                        <p class="font-medium text-gray-700">One-Word Answer:</p>
+                        <p id="oneWordAnswer" class="text-gray-900 mt-1 text-xl font-semibold"></p>
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- Best Model Table -->
+            <div class="mt-6">
+                <h3 class="text-md font-semibold mb-2">Best Model Selection</h3>
+                <table id="bestModelTable" class="w-full border-collapse border border-gray-300">
+                    <thead>
+                        <tr class="bg-gray-100">
+                            <th class="border border-gray-300 p-2">Best Model</th>
+                            <th class="border border-gray-300 p-2">Best Output</th>
+                            <th class="border border-gray-300 p-2">Selection Reason</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr id="bestModelRow"></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="accuracySection" class="mt-6 hidden">
+                <h3 class="text-md font-semibold mb-2">Model Accuracy on Dataset</h3>
+                <p id="accuracyScore" class="mb-2 text-sm text-green-700"></p>
+                <table class="w-full border-collapse border border-gray-300">
+                    <thead>
+                        <tr class="bg-gray-100">
+                            <th class="border border-gray-300 p-2">Question</th>
+                            <th class="border border-gray-300 p-2">Expected</th>
+                            <th class="border border-gray-300 p-2">Predicted</th>
+                            <th class="border border-gray-300 p-2">Correct?</th>
+                            <th class="border border-gray-300 p-2">Confidence</th>
+                        </tr>
+                    </thead>
+                    <tbody id="accuracyTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('submitBtn').addEventListener('click', async () => {
+            const prompt = document.getElementById('prompt').value.trim();
+            if (!prompt) {
+                alert('Please enter a prompt.');
+                return;
+            }
+
+            // Show loading spinner and hide results/final output
+            document.getElementById('loading').classList.remove('hidden');
+            document.getElementById('results').classList.add('hidden');
+            document.getElementById('finalOutput').classList.add('hidden');
+
+            try {
+                const response = await fetch('/api/query', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+
+                const data = await response.json();
+                
+                // Hide loading spinner and show results/final output
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('results').classList.remove('hidden');
+                document.getElementById('finalOutput').classList.remove('hidden');
+
+                // Display final output
+                document.getElementById('finalOutput').textContent = `FINAL OUTPUT = ${data.one_word_answer}`;
+                document.getElementById('descriptiveAnswer').textContent = data.descriptive_answer || 'N/A';
+                document.getElementById('oneWordAnswer').textContent = data.one_word_answer || 'N/A';
+
+
+                // Display model outputs and cluster assignments
+                const resultsTableBody = document.getElementById('resultsTableBody');
+                resultsTableBody.innerHTML = '';
+                for (const [model, output] of Object.entries(data.outputs)) {
+                    const cluster = data.cluster_assignments[model];
+                    const clusterSimilarity = data.cluster_similarities[cluster] || '-';
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td class="border border-gray-300 p-2">${model}</td>
+                        <td class="border border-gray-300 p-2">${output}</td>
+                        <td class="border border-gray-300 p-2 text-center">${cluster}</td>
+                        <td class="border border-gray-300 p-2 text-center">${clusterSimilarity}</td>
+                    `;
+                    row.className = model === data.best_model ? 'bg-green-100' : ''; // Highlight best model row
+                    resultsTableBody.appendChild(row);
+                }
+
+                // Display best model, output, and selection reason
+                const bestModelRow = document.getElementById('bestModelRow');
+                bestModelRow.innerHTML = `
+                    <td class="border border-gray-300 p-2">${data.best_model}</td>
+                    <td class="border border-gray-300 p-2">${data.best_output}</td>
+                    <td class="border border-gray-300 p-2">${data.selection_reason}</td>
+                `;
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('finalOutput').classList.add('hidden');
+                alert('An error occurred while processing your request.');
+            }
+        });
+
+
+
+
+
+    document.getElementById('testAccuracyBtn').addEventListener('click', async () => {
+        document.getElementById('accuracySection').classList.add('hidden');
+        document.getElementById('loading').classList.remove('hidden');
+
+        try {
+            const response = await fetch('/api/evaluate');
+            const data = await response.json();
+            document.getElementById('loading').classList.add('hidden');
+            document.getElementById('results').classList.remove('hidden');
+            document.getElementById('accuracySection').classList.remove('hidden');
+
+            document.getElementById('accuracyScore').textContent = `Accuracy: ${data.accuracy}%`;
+
+            const tbody = document.getElementById('accuracyTableBody');
+            tbody.innerHTML = '';
+            for (const item of data.results) {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="border border-gray-300 p-2">${item.question}</td>
+                    <td class="border border-gray-300 p-2">${item.expected}</td>
+                    <td class="border border-gray-300 p-2">${item.predicted}</td>
+                    <td class="border border-gray-300 p-2 text-center">${item.correct ? '✅' : '❌'}</td>
+                    <td class="border border-gray-300 p-2 text-center">${item.confidence ?? '-'}</td>
+                `;
+                tbody.appendChild(row);
+            }
+
+        } catch (err) {
+            console.error("Error during evaluation:", err);
+            document.getElementById('loading').classList.add('hidden');
+            alert("Evaluation failed.");
+        }
+    });
+
+    </script>
+</body>
+</html>

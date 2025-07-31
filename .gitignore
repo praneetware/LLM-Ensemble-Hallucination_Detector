@@ -1,0 +1,60 @@
+# Python cache and compiled files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+
+# API secrets (you had hardcoded keys earlier)
+*.env
+.env
+secrets.json
+config.json
+
+# OS-generated files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Large models / checkpoint files (if any)
+*.pth
+*.pt
+*.ckpt
+*.h5
+
+# OneDrive conflict files / syncing issues
+*.lnk
+~$*
+*.tmp
+~*.tmp
+
+# Application-specific folders you tried to delete
+Lib/
+models/
+data/
+output/
+checkpoints/
+
+# Flask/Streamlit/SQLite temp files
+instance/
+*.db
+*.sqlite3
+
+# Git filter-repo residual folders
+.git-rewrite/
+.git-filter-repo/
+
+# IDE/editor configs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Log and debug files
+*.log
+logs/
+
